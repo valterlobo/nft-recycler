@@ -1,4 +1,4 @@
-# 🌱 NFT Recycler - Sistema de Reciclagem de NFTs
+# NFT Recycler - Sistema de Reciclagem de NFTs
 
 Sistema de smart contracts para reciclagem de NFTs com geração de pontos baseados na pegada de carbono.
 
@@ -420,7 +420,7 @@ Contribuições são bem-vindas! Por favor:
 
 - [x] Testes I
 
-- [ ] Revisão
+- [X] Revisão
 
 - [ ] Testes completos
 
