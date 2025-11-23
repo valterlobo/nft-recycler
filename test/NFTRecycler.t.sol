@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Test} from "forge-std/Test.sol";
+import {Test, console} from "forge-std/Test.sol";
 import {NFTRecycler} from "../src/NFTRecycler.sol";
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {ERC721Burnable} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
@@ -306,7 +306,7 @@ contract NFTRecyclerTest is Test {
         nftWithBurn.approve(address(recycler), token1);
         nftWithoutBurn.approve(address(recycler), token2);
 
-        uint256 totalPoints = recycler.recycleMultipleNFts(contracts, tokenIds, useBurn);
+        uint256 totalPoints = recycler.recycleMultipleNFTs(contracts, tokenIds, useBurn);
         vm.stopPrank();
 
         assertEq(totalPoints, POINTS_PER_NFT * 2);
@@ -339,7 +339,7 @@ contract NFTRecyclerTest is Test {
         vm.expectEmit(true, true, false, false);
         emit RecyclingFailed(user1, address(nftWithBurn), token2, "Nao e o dono", block.timestamp);
 
-        uint256 totalPoints = recycler.recycleMultipleNFts(contracts, tokenIds, useBurn);
+        uint256 totalPoints = recycler.recycleMultipleNFTs(contracts, tokenIds, useBurn);
         vm.stopPrank();
 
         assertEq(totalPoints, POINTS_PER_NFT); // Apenas 1 sucesso
@@ -353,7 +353,7 @@ contract NFTRecyclerTest is Test {
 
         vm.prank(user1);
         vm.expectRevert("Arrays com tamanhos diferentes");
-        recycler.recycleMultipleNFts(contracts, tokenIds, useBurn);
+        recycler.recycleMultipleNFTs(contracts, tokenIds, useBurn);
     }
 
     function test_RevertWhen_RecyclingMultipleExceedsBatchSize() public {
@@ -363,7 +363,7 @@ contract NFTRecyclerTest is Test {
 
         vm.prank(user1);
         vm.expectRevert("Limite de lote excedido");
-        recycler.recycleMultipleNFts(contracts, tokenIds, useBurn);
+        recycler.recycleMultipleNFTs(contracts, tokenIds, useBurn);
     }
 
     function test_RevertWhen_RecyclingMultipleWithEmptyArray() public {
@@ -373,7 +373,7 @@ contract NFTRecyclerTest is Test {
 
         vm.prank(user1);
         vm.expectRevert("Array vazio");
-        recycler.recycleMultipleNFts(contracts, tokenIds, useBurn);
+        recycler.recycleMultipleNFTs(contracts, tokenIds, useBurn);
     }
 
     // ============ Testes de Consulta ============
@@ -401,7 +401,6 @@ contract NFTRecyclerTest is Test {
     }
 
     function test_GetNFTContractHistory() public {
-
         recycler.addAcceptedNFT(address(nftWithBurn), POINTS_PER_NFT);
 
         uint256 token1 = nftWithBurn.getNextTokenId() + 12;
@@ -409,15 +408,17 @@ contract NFTRecyclerTest is Test {
         uint256 token2 = nftWithBurn.getNextTokenId() + 22;
         nftWithBurn.safeMint(user2, token2);
 
-        vm.prank(user1);
+        vm.startPrank(user1);
         nftWithBurn.approve(address(recycler), token1);
         //console.log("token1:", token1);
-        assertEq( nftWithBurn.ownerOf(token1), user1);
-        //console.log("owner of token1:", nftWithBurn.ownerOf(token1));
-        //recycler.recycleNFT(address(nftWithBurn), token1);
+        assertEq(nftWithBurn.ownerOf(token1), user1);
+        console.log("owner of token1:", nftWithBurn.ownerOf(token1));
+        console.log("sender:", msg.sender);
+
+        recycler.recycleNFT(address(nftWithBurn), token1);
         vm.stopPrank();
 
-        vm.prank(user2);
+        vm.startPrank(user2);
         nftWithBurn.approve(address(recycler), token2);
         recycler.recycleNFT(address(nftWithBurn), token2);
         vm.stopPrank();
@@ -536,7 +537,7 @@ contract NFTRecyclerTest is Test {
     // ============ Testes Fuzz ============
 
     function testFuzz_AddAcceptedNFT(uint256 points) public {
-        vm.assume(points > 0 && points < type(uint128).max);
+        vm.assume(points > 0 && points < recycler.MAX_POINTS_PER_NFT());
 
         recycler.addAcceptedNFT(address(nftWithBurn), points);
 
@@ -545,7 +546,7 @@ contract NFTRecyclerTest is Test {
     }
 
     function testFuzz_RecycleNFT(uint256 points) public {
-        vm.assume(points > 0 && points < type(uint128).max);
+        vm.assume(points > 0 && points < recycler.MAX_POINTS_PER_NFT());
 
         recycler.addAcceptedNFT(address(nftWithBurn), points);
 
